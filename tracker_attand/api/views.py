@@ -1,4 +1,4 @@
-from datetime import timedelta, timezone
+from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from rest_framework.authtoken.models import Token
 from rest_framework import generics,status,permissions
@@ -59,7 +59,7 @@ class TeacherOnlyView(generics.RetrieveAPIView):
     def get_object(self):
         return self.request.user
 
-class StudentOnlyView(generics.ListAPIView):
+class StudentOnlyView(generics.RetrieveAPIView):
     serializer_class = UserSerializer
     permission_classes = [IsStudent, permissions.IsAuthenticated] 
 
@@ -69,11 +69,6 @@ class StudentOnlyView(generics.ListAPIView):
 
 
 class CourseNameListView(generics.ListCreateAPIView):
-    u_ser = User.objects.all()
-    for _ in u_ser:
-        print(_.is_teacher)
-        print(_.username)
-        print(_.uid)
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
 
@@ -124,6 +119,9 @@ class HourListDetailView(generics.RetrieveUpdateDestroyAPIView):
         return TeacherCreateHour.objects.filter(course_id=course_id, class_id=class_id)
 class TeacherScanView(APIView):
     def post(self, request, *args, **kwargs):
+        user_info = User.objects.all()
+        for students in user_info:
+            print(students.uid)
         serializer = TeacherScanPostSerializer(data=request.data)
         if serializer.is_valid():
             scan_instance = serializer.save()
@@ -132,28 +130,46 @@ class TeacherScanView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def create_attendance_entry(self, scan_instance):
-        active_tr_scan = User.filter(
-            special_uid=scan_instance.special_uid
-        ).first()   
-        
-
+        user_peops = User.objects.all()
+        for students in user_peops:
+            print(students.uid)
+        print(scan_instance.special_uid)
+        active_tr_scan = User.objects.filter(uid = scan_instance.special_uid).first()
+        print(active_tr_scan)
         if active_tr_scan:
-            time_tolerance = timedelta(minutes=5)
-            AttendanceList.objects.create(
-                course_id = scan_instance.course_id,
-                class_id = scan_instance.class_id,
-                hour_id = scan_instance.hour_id,
-                date=timezone.now().date(),
-                uid=active_tr_scan.email,
-                name=scan_instance.name
-                )
+            course_det = Course.objects.filter(id=scan_instance.course_id.id).first()
+            course_name = course_det.course_name if course_det else None
+            print(scan_instance.course_id)
+            print(scan_instance.class_id)
+            print(scan_instance.hour_id)
+            course_ = scan_instance.course_id.id
+            print(course_)
+            class_ = scan_instance.class_id.id
+            print(class_)
+            hour_ = scan_instance.hour_id.id
+            print(class_)
+            if course_name == active_tr_scan.course:
+                AttendanceList.objects.create(
+                    course_id = course_,
+                    class_id =class_,
+                    hour_id =hour_,
+                    date = timezone.now().date(),
+                    uid=active_tr_scan.email,
+                    name=active_tr_scan.name
+                    )
 
 class AttendanceSessionListView(generics.ListAPIView):
     serializer_class = AttendanceListSerializer
 
     def get_queryset(self):
-        course_id = self.kwargs.get('course_id')
-        class_id = self.kwargs.get('class_id')
-        hour_id = self.kwargs.get('hour_id')
+        #for _ in AttendanceList.objects.all():
+            #print(_.course_id)
+            #print(_.class_id)
+            #print(_.hour_id)
+            #print("\n")
+        #course_id = self.kwargs.get('course_id')
+        #class_id = self.kwargs.get('class_id')
+        #hour_id = self.kwargs.get('hour_id')
         print(AttendanceList.objects.all())
-        return AttendanceList.objects.filter(course_id =course_id, class_id = class_id, hour_id=hour_id)
+        return AttendanceList.objects.all()
+    #filter(course_id =course_id, class_id = class_id, hour_id=hour_id)
