@@ -98,6 +98,10 @@ class HourListCreateView(generics.ListCreateAPIView):
     serializer_class = TrCreateHourSerializer
 
     def get_queryset(self):
+        user_info = User.objects.all()
+        print(user_info)
+        for students in user_info:
+            print(students.uid)
         course_id = self.kwargs['course_id']
         class_id = self.kwargs['class_id']
         return TeacherCreateHour.objects.filter(course_id=course_id, class_id=class_id)
@@ -120,6 +124,7 @@ class HourListDetailView(generics.RetrieveUpdateDestroyAPIView):
 class TeacherScanView(APIView):
     def post(self, request, *args, **kwargs):
         user_info = User.objects.all()
+        print(user_info)
         for students in user_info:
             print(students.uid)
         serializer = TeacherScanPostSerializer(data=request.data)
@@ -142,11 +147,11 @@ class TeacherScanView(APIView):
             print(scan_instance.course_id)
             print(scan_instance.class_id)
             print(scan_instance.hour_id)
-            course_ = scan_instance.course_id.id
+            course_ = scan_instance.course_id
             print(course_)
-            class_ = scan_instance.class_id.id
+            class_ = scan_instance.class_id
             print(class_)
-            hour_ = scan_instance.hour_id.id
+            hour_ = scan_instance.hour_id
             print(class_)
             if course_name == active_tr_scan.course:
                 AttendanceList.objects.create(
